@@ -1,0 +1,53 @@
+#!/bin/sh
+
+export ARCH=arm
+export CROSS_COMPILE=arm-poky-linux-gnueabi-
+export PATH=/opt/poky/1.5.1/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/:$PATH
+
+INSTALL_BINDIR=../image
+UBOOT_IMAGE=u-boot.imx
+ 
+{
+CPU_JOB_NUM=$(grep processor /proc/cpuinfo | awk '{field=$NF};END{print field+2}')
+START_TIME=`date +%s`
+
+case "$1" in
+clean)
+    echo make -j$CPU_JOB_NUM mrproper
+    make -j$CPU_JOB_NUM mrproper
+    ;;
+config)
+	if [ "$2" ] ; then
+  		echo make -j$CPU_JOB_NUM $2
+	    make -j$CPU_JOB_NUM $2
+	else 
+ 	 	echo make -j$CPU_JOB_NUM mx6dlsabresd_config
+	 	make -j$CPU_JOB_NUM mx6dlsabresd_config
+ 	 	#echo make -j$CPU_JOB_NUM mx6qsabresd_config
+	 	#make -j$CPU_JOB_NUM mx6qsabresd_config
+ 	 	#echo make -j$CPU_JOB_NUM mx6qsabresdandroid_config
+	 	#make -j$CPU_JOB_NUM mx6qsabresdandroid_config
+	fi
+
+#    make -j$CPU_JOB_NUM mx6qsabresd_sata_confiig
+    ;;
+all|*)
+    echo make -j$CPU_JOB_NUM
+    make -j$CPU_JOB_NUM
+    if [ $? != 0 ] ; then
+	    exit 1
+    fi
+    if [ "$2" ] ; then
+        INSTALL_BINDIR=$2
+    fi
+    if [ $INSTALL_BINDIR ] ; then
+        echo cp -a $UBOOT_IMAGE $INSTALL_BINDIR/$UBOOT_IMAGE
+        cp -a $UBOOT_IMAGE $INSTALL_BINDIR/$UBOOT_IMAGE
+    fi
+    cp -a $UBOOT_IMAGE ../image
+    ;;
+esac
+
+END_TIME=`date +%s`
+echo "Total compile time is $((($END_TIME-$START_TIME)/60)) minutes $((($END_TIME-$START_TIME)%60)) seconds"
+} 2>&1 |tee b.out
